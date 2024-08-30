@@ -5,17 +5,33 @@ mod models;
 mod routes;
 mod utils;
 
-use axum::{routing::get, Router};
-use tokio::net::TcpListener;
+use std::env;
+
+use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
 
 #[tokio::main]
 async fn main() {
     dotenv::from_filename(".env.development").ok();
-    let app = Router::new().route("/", get("Hello, world!"));
+    println!("🌟 EasyTicket API 🌟");
 
-    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    println!("=> Listening on http://localhost:8080...");
+    let app = Router::new().route("/", get(home));
+
+    let addr = env::var("HOST").expect("Erro ao carregar env HOST");
+    let listener = match tokio::net::TcpListener::bind(&addr).await {
+        Ok(listener) => {
+            println!("✅ Servidor iniciado em {}", &addr);
+            listener
+        }
+        Err(e) => {
+            eprintln!("❌ Erro ao iniciar o servidor: {e}");
+            std::process::exit(1)
+        }
+    };
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
+}
+
+async fn home() -> impl IntoResponse {
+    (StatusCode::OK, "Home")
 }
