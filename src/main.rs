@@ -27,6 +27,17 @@ async fn main() {
             std::process::exit(1)
         }
     };
+
+    match db::connection::test_connection().await {
+        Ok(_) => {
+            println!("✅ Banco de dados iniciado");
+        }
+        Err(e) => {
+            eprintln!("❌ Erro ao iniciar banco de dados: {e}");
+            std::process::exit(1)
+        }
+    }
+
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
