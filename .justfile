@@ -1,25 +1,43 @@
 # Services
-up:
+services-up:
     @docker compose -f compose.yaml up -d
 
-down:
+services-down:
     @docker compose -f compose.yaml down
 
-restart:
+services-stop:
+    @docker compose -f compose.yaml stop
+
+services-restart:
     @docker compose -f compose.yaml down
     @docker compose -f compose.yaml up -d
 
-logs:
-    @docker compose -f compose.yaml logs -f
+# Migrations
+migrate-create migration_name:
+    @cargo sqlx migrate add {{ migration_name }}
+
+migrate-run:
+    @cargo sqlx migrate run
+
+migrate-down:
+    @cargo sqlx migrate revert
 
 # Dev utils
 dev:
-    just up
+    @just services-up
     @sleep 1
-    just run
+    @just run-watch
 
-run:
+run-watch:
     @cargo watch -q -c -x run
 
-test:
+test-watch:
     @cargo watch -q -c -x test
+
+lint:
+    @cargo fmt --check
+    @cargo clippy
+
+lint-fix:
+    @cargo fmt
+    @cargo clippy
