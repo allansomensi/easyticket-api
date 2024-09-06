@@ -1,20 +1,28 @@
-mod config;
 mod db;
 mod handlers;
 mod models;
-mod routes;
-mod utils;
 
+use axum::{routing::get, Router};
+use handlers::{status, ticket};
+use sqlx::PgPool;
 use std::env;
-
-use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
 
 #[tokio::main]
 async fn main() {
-    dotenv::from_filename(".env.development").ok();
+    dotenv::dotenv().ok();
+
+    let database_url = std::env::var("DATABASE_URL").unwrap();
+    let pool = PgPool::connect(&database_url).await.unwrap();
     println!("🌟 EasyTicket API 🌟");
 
-    let app = Router::new().route("/", get(home));
+    let app = Router::new()
+        .route("/status", get(status::show_status))
+        .route(
+            "/tickets",
+            get(ticket::show_tickets).post(ticket::create_ticket),
+        )
+        .route("/tickets/count", get(ticket::count_tickets))
+        .with_state(pool);
 
     let addr = env::var("HOST").expect("Erro ao carregar env HOST");
     let listener = match tokio::net::TcpListener::bind(&addr).await {
@@ -41,8 +49,4 @@ async fn main() {
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
-}
-
-async fn home() -> impl IntoResponse {
-    (StatusCode::OK, "Home")
 }
