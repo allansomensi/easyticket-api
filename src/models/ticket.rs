@@ -1,28 +1,21 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 use uuid::Uuid;
 
+#[derive(Debug)]
 pub enum TicketError {
     EmptyTitle,
     TitleTooShort,
     TitleTooBig,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum TicketStatus {
-    Open,
-    Pending,
-    Completed,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, FromRow)]
 pub struct Ticket {
     pub id: Uuid,
     pub title: String,
     pub requester: String,
     pub created_at: DateTime<Utc>,
-    pub status: TicketStatus,
 }
 
 impl Ticket {
@@ -44,27 +37,12 @@ impl Ticket {
             title: String::from(title),
             requester: String::from(requester),
             created_at: Utc::now(),
-            status: TicketStatus::Open,
         })
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct NewTicket {
+#[derive(Deserialize, Serialize)]
+pub struct CreateTicketRequest {
     pub title: String,
     pub requester: String,
-}
-
-impl NewTicket {
-    pub fn new(title: &str, requester: &str) -> Self {
-        NewTicket {
-            title: String::from(title),
-            requester: String::from(requester),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct DeleteTicket {
-    pub id: Uuid,
 }
