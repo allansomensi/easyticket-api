@@ -1,4 +1,4 @@
-use crate::models::ticket::{CreateTicketRequest, Ticket};
+use crate::models::ticket::{CreateTicketRequest, DeleteTicketRequest, Ticket};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::PgPool;
 
@@ -25,10 +25,10 @@ pub async fn create_ticket(
     let new_ticket = Ticket::new(&request.title, &request.requester).unwrap();
 
     match sqlx::query(
-        r#"
+        "
         INSERT INTO tickets (id, title, requester, created_at)
         VALUES ($1, $2, $3, $4)
-        "#,
+        ",
     )
     .bind(new_ticket.id)
     .bind(&new_ticket.title)
@@ -37,7 +37,21 @@ pub async fn create_ticket(
     .execute(&pool)
     .await
     {
-        Ok(_) => StatusCode::OK.into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Ok(_) => StatusCode::CREATED,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+pub async fn delete_ticket(
+    State(pool): State<PgPool>,
+    Json(request): Json<DeleteTicketRequest>,
+) -> impl IntoResponse {
+    match sqlx::query("DELETE FROM tickets WHERE id = $1")
+        .bind(request.id)
+        .execute(&pool)
+        .await
+    {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
     }
 }

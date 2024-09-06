@@ -19,7 +19,9 @@ async fn main() {
         .route("/status", get(status::show_status))
         .route(
             "/tickets",
-            get(ticket::show_tickets).post(ticket::create_ticket),
+            get(ticket::show_tickets)
+                .post(ticket::create_ticket)
+                .delete(ticket::delete_ticket),
         )
         .route("/tickets/count", get(ticket::count_tickets))
         .with_state(pool);

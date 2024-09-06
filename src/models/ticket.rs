@@ -41,8 +41,13 @@ impl Ticket {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct CreateTicketRequest {
     pub title: String,
     pub requester: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct DeleteTicketRequest {
+    pub id: Uuid,
 }
