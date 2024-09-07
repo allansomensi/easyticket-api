@@ -1,19 +1,33 @@
-mod db;
 mod handlers;
 mod models;
 
 use axum::{routing::get, Router};
 use handlers::{status, ticket};
-use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 use std::env;
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     let database_url = std::env::var("DATABASE_URL").unwrap();
-    let pool = PgPool::connect(&database_url).await.unwrap();
+
     println!("🌟 EasyTicket API 🌟");
+
+    let pool = match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("✅ Conectado ao banco de dados");
+            pool
+        }
+        Err(e) => {
+            eprintln!("❌ Erro ao se conectar ao banco de dados: {e}");
+            std::process::exit(1);
+        }
+    };
 
     let app = Router::new()
         .route("/status", get(status::show_status))
@@ -38,17 +52,5 @@ async fn main() {
         }
     };
 
-    match db::connection::test_connection().await {
-        Ok(_) => {
-            println!("✅ Banco de dados iniciado");
-        }
-        Err(e) => {
-            eprintln!("❌ Erro ao iniciar banco de dados: {e}");
-            std::process::exit(1)
-        }
-    }
-
-    axum::serve(listener, app.into_make_service())
-        .await
-        .unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
